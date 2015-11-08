@@ -28,7 +28,7 @@ struct GetMaxSize<void, Rest...> {
 
 template <typename... Ts>
 struct VariantHolder {
-	static constexpr size_t max_size = GetMaxSize<_Variant<Ts>...>::max_size;
+	static constexpr size_t max_size = GetMaxSize<Ts...>::max_size;
 	char storage[max_size] = { '\0' };
 	size_t current_index = -1;
 };
@@ -91,19 +91,6 @@ struct Variant : VariantHolder<Ts...> {
 	size_t index() const {
 		return GetIndex<T, Ts...>::index;
 	}
-};
-
-template <typename T>
-struct _Variant {
-	_Variant(T&& t) : t_{ t } {
-
-	}
-
-	_Variant() : t_{} {
-
-	}
-
-	T t_;
 };
 
 template <typename T, typename... Types>
