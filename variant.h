@@ -3,9 +3,7 @@
 #include <exception>
 
 namespace variant {
-namespace detail {
-inline namespace v1 {
-
+namespace utils {
 template <typename First, typename... Rest>
 struct GetMaxSize {
 	static constexpr size_t _first_size = sizeof(First);
@@ -24,13 +22,6 @@ struct GetMaxSize<void, Rest...> {
 	static constexpr size_t _first_size = 0;
 	static constexpr size_t _second_size = GetMaxSize<Rest...>::_first_size;
 	static constexpr size_t max_size = _first_size > _second_size ? _first_size : _second_size;
-};
-
-template <typename... Ts>
-struct VariantHolder {
-	static constexpr size_t max_size = GetMaxSize<Ts...>::max_size;
-	char storage[max_size] = { '\0' };
-	size_t current_index = -1;
 };
 
 template <typename First, typename... Rest>
@@ -73,10 +64,22 @@ struct ContainsT<T> {
 };
 
 template <typename... Ts>
-struct Variant : VariantHolder<Ts...> {
+struct VariantHolder {
+	static constexpr size_t max_size = GetMaxSize<Ts...>::max_size;
+	char storage[max_size] = { '\0' };
+	size_t current_index = -1;
+};
+
+}
+
+namespace detail {
+inline namespace v1 {
+
+template <typename... Ts>
+struct Variant : utils::VariantHolder<Ts...> {
 	template <typename T>
 	Variant(T&& t) {
-		static_assert(ContainsT<T, Ts...>::value, "Variant does not contains the given type");
+		static_assert(utils::ContainsT<T, Ts...>::value, "Variant does not contains the given type");
 		*reinterpret_cast<T*>(storage) = t;
 		current_index = index<T>();
 	}
@@ -84,12 +87,12 @@ struct Variant : VariantHolder<Ts...> {
 
 	template <typename T>
 	bool valid() const {
-		return GetIndex<T, Ts...>::index == current_index;
+		return utils::GetIndex<T, Ts...>::index == current_index;
 	}
 
 	template <typename T>
 	size_t index() const {
-		return GetIndex<T, Ts...>::index;
+		return utils::GetIndex<T, Ts...>::index;
 	}
 };
 
